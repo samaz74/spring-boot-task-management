@@ -1,39 +1,34 @@
 package com.app.taskmanagement.model;
 
-import com.app.taskmanagement.model.enums.Roles;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
+import org.springframework.data.annotation.CreatedDate;
 
 import java.time.LocalDateTime;
 
 @Entity
-@NoArgsConstructor
 @Getter
 @Setter
+@NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class User {
+public class InvalidatedToken {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    private String fName;
-    private String lName;
+    private String token;
     private String email;
-    private String password;
-    private Roles role;
+    private LocalDateTime expiresAt;
     @CreationTimestamp
-    private LocalDateTime created_at;
-    public User(String fName, String lName, String email, String password, Roles role) {
-        this.fName = fName;
-        this.lName = lName;
+    private LocalDateTime createdAt;
+
+    public InvalidatedToken(String token, String email, LocalDateTime expiresAt) {
+        this.token = token;
         this.email = email;
-        this.password = password;
-        this.role = role;
-
+        this.expiresAt = expiresAt;
     }
-
 }
