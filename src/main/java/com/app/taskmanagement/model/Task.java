@@ -28,19 +28,19 @@ public class Task {
     private User createdBy;
     @ManyToOne
     @JoinColumn(name = "ASSIGNED_BY")
-    private User assignedBy;
+    private User assignedTo;
     private LocalDateTime dueDate;
     @CreationTimestamp
     private LocalDateTime createdAt;
     @UpdateTimestamp
     private LocalDateTime updatedAt;
-    public Task(String title, String description, TaskStatus status, Priority priority, User createdBy, User assignedBy, LocalDateTime dueDate) {
+    public Task(String title, String description, TaskStatus status, Priority priority, User createdBy, User assignedTo, LocalDateTime dueDate) {
         this.title = title;
         this.description = description;
         this.status = status;
         this.priority = priority;
         this.createdBy = createdBy;
-        this.assignedBy = assignedBy;
+        this.assignedTo = assignedTo;
         this.dueDate = dueDate;
 
     }
