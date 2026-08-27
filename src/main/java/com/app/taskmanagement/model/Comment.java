@@ -7,9 +7,7 @@ import org.hibernate.annotations.CreationTimestamp;
 import java.time.LocalDateTime;
 
 @Entity
-@AllArgsConstructor
 @NoArgsConstructor
-@Builder
 @Getter
 @Setter
 public class Comment {
@@ -28,6 +26,6 @@ public class Comment {
     public Comment(String content, Task task, User user) {
         this.content = content;
         this.task = task;
-        this.user = user;
+        this.user =user;
     }
 }

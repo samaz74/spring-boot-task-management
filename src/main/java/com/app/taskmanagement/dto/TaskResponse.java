@@ -2,7 +2,6 @@ package com.app.taskmanagement.dto;
 
 import com.app.taskmanagement.model.enums.Priority;
 import com.app.taskmanagement.model.enums.TaskStatus;
-import jakarta.persistence.Entity;
 import lombok.*;
 
 import java.time.LocalDateTime;
@@ -22,4 +21,6 @@ public class TaskResponse {
     private Long assignedToId;
     private String assignedToName;
     private LocalDateTime dueDate;
+    private LocalDateTime createdDate;
+    private LocalDateTime updatedDate;
 }

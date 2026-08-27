@@ -12,12 +12,10 @@ import java.time.LocalDateTime;
 @Setter
 @Builder
 public class TaskRequest {
-    private Long id;
     private String title;
     private String description;
     private TaskStatus status;
     private Priority priority;
-    private Long CreatedById;
     private Long assignedToId;
     private LocalDateTime dueDate;
 }

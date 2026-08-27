@@ -14,8 +14,6 @@ import java.time.LocalDateTime;
 @Getter
 @Setter
 @NoArgsConstructor
-@AllArgsConstructor
-@Builder
 public class InvalidatedToken {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
