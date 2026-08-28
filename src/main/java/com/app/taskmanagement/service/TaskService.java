@@ -35,7 +35,7 @@ public class TaskService {
 
     public TaskResponse createTask(TaskRequest taskRequest, Principal principal){
         Task task = taskRepository.save(taskMapper.toEntity(taskRequest, userService.getUserByEmailEntity(principal.getName())));
-        notificationService.CreateTask(taskMapper.toResponse(task));
+        notificationService.CreateTask(task);
         return taskMapper.toResponse(task);
     }
     public TaskResponse updateTask(TaskRequest taskRequest, Principal principal,Long id){

@@ -6,7 +6,7 @@ import lombok.Getter;
 import java.time.LocalDateTime;
 @AllArgsConstructor
 @Getter
-public class ErorResponse {
+public class ErrorResponse {
     private LocalDateTime timestamp;
     private int status;
     private String message;

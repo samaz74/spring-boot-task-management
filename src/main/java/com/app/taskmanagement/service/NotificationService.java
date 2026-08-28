@@ -3,6 +3,7 @@ package com.app.taskmanagement.service;
 import com.app.taskmanagement.dto.NotificationResponse;
 import com.app.taskmanagement.dto.TaskResponse;
 import com.app.taskmanagement.dto.mapper.NotificationMapper;
+import com.app.taskmanagement.exception.AccessDeniedException;
 import com.app.taskmanagement.exception.ResourceNotFoundException;
 import com.app.taskmanagement.model.Comment;
 import com.app.taskmanagement.model.Notification;
@@ -19,19 +20,17 @@ import java.util.stream.Collectors;
 @Service
 public class NotificationService {
     private final NotificationRepository notificationRepository;
-    private final TaskService taskService;
     private final UserService userService;
     private final NotificationMapper notificationMapper;
 
-    public NotificationService(NotificationRepository notificationRepository, TaskService taskService, UserService userService, NotificationMapper notificationMapper) {
+    public NotificationService(NotificationRepository notificationRepository, UserService userService, NotificationMapper notificationMapper) {
         this.notificationRepository = notificationRepository;
-        this.taskService = taskService;
         this.userService = userService;
         this.notificationMapper = notificationMapper;
     }
 
-    public void CreateTask(TaskResponse taskResponse){
-        notificationRepository.save(new Notification(taskResponse.getTitle(),false,taskService.getTaskByIdEntity(taskResponse.getId()),userService.getUserByIdEntity(taskResponse.getAssignedToId()), NotificationType.TASK_ASSIGNED));
+    public void CreateTask(Task task){
+        notificationRepository.save(new Notification(task.getTitle(),false,task,userService.getUserByIdEntity(task.getAssignedTo().getId()), NotificationType.TASK_ASSIGNED));
     }
     public void updateTaskStatus(Task task, Principal principal){
         if (task.getCreatedBy().equals(userService.getUserByEmailEntity(principal.getName())))
@@ -39,13 +38,18 @@ public class NotificationService {
         else
             notificationRepository.save(new Notification(task.getTitle(),false,task,task.getCreatedBy(), NotificationType.TASK_UPDATED));
     }
-    public void UpdateTaskReadStatus(Long id){
+    public void UpdateTaskReadStatus(Long id,Principal principal){
         Notification notification = notificationRepository.findById(id).orElseThrow(()->new ResourceNotFoundException("Notification not found"));
+        if(notification.getUser().getId().equals(userService.getUserByEmailEntity(principal.getName()))){
         notification.setIsRead(true);
         notificationRepository.save(notification);
+        }else throw new AccessDeniedException("Access denied");
     }
-    public void deleteNotification(Long id){
-        notificationRepository.deleteById(id);
+    public void deleteNotification(Long id , Principal principal){
+        Notification notification = notificationRepository.findById(id).orElseThrow(()->new ResourceNotFoundException("Notification not found"));
+        if(notification.getUser().getId().equals(userService.getUserByEmailEntity(principal.getName()))){
+            notificationRepository.deleteById(id);
+        }else throw new AccessDeniedException("Access denied");
     }
     public List<NotificationResponse> getTasksAssigned(Principal principal){
         return notificationRepository.findNotificationByUser(userService.getUserByEmailEntity(principal.getName())).stream().map(notificationMapper::toNotificationResponse).collect(Collectors.toList());
@@ -56,5 +60,8 @@ public class NotificationService {
         }else{
             notificationRepository.save(new Notification(comment.getContent(),false,comment.getTask(),comment.getTask().getCreatedBy(), NotificationType.COMMENT_ADDED));
         }
+    }
+    public List<NotificationResponse> getUserNotifications(Principal principal){
+        return notificationRepository.findNotificationByUser(userService.getUserByEmailEntity(principal.getName())).stream().map(notificationMapper::toNotificationResponse).collect(Collectors.toList());
     }
 }

@@ -5,6 +5,7 @@ import com.app.taskmanagement.dto.AuthResponse;
 import com.app.taskmanagement.dto.UserRequest;
 import com.app.taskmanagement.dto.mapper.UserMapper;
 import com.app.taskmanagement.exception.DuplicateResourceException;
+import com.app.taskmanagement.exception.InvalidOperationException;
 import com.app.taskmanagement.exception.ResourceNotFoundException;
 import com.app.taskmanagement.model.InvalidatedToken;
 import com.app.taskmanagement.model.User;
@@ -53,7 +54,13 @@ public class AuthService {
     }
 
     public void logoutUser(String token) {
-
+        if(!token.startsWith("Bearer ")){
+            throw new InvalidOperationException("Invalid token");
+        }
+        token = token.substring(7);
+        if(invalidatedTokenRepository.existsByToken(token)){
+            throw new DuplicateResourceException("you are already logged out");
+        }
         String email = jwtUtil.extractEmail(token);
         LocalDateTime expiration = jwtUtil.extractExpiration(token);
         InvalidatedToken invalidatedToken = new InvalidatedToken(token,email,expiration);
