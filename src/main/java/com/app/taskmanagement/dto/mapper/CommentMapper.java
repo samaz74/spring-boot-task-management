@@ -3,6 +3,7 @@ package com.app.taskmanagement.dto.mapper;
 import com.app.taskmanagement.dto.CommentRequest;
 import com.app.taskmanagement.dto.CommentResponse;
 import com.app.taskmanagement.model.Comment;
+import com.app.taskmanagement.model.User;
 import com.app.taskmanagement.service.TaskService;
 import com.app.taskmanagement.service.UserService;
 import org.springframework.stereotype.Component;
@@ -19,11 +20,11 @@ public class CommentMapper {
         this.userService = userService;
     }
 
-    public Comment toEntity(CommentRequest commentRequest, Principal principal) {
+    public Comment toEntity(CommentRequest commentRequest, User user) {
         return new Comment(
                 commentRequest.getContent(),
                 taskService.getTaskByIdEntity(commentRequest.getTaskId()),
-                userService.getUserByEmailEntity(principal.getName())
+                user
         );
     }
     public CommentResponse toResponse(Comment comment) {

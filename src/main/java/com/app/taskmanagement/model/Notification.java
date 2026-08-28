@@ -23,6 +23,7 @@ public class Notification {
     @ManyToOne
     @JoinColumn(name = "USER_ID")
     private User user;
+    @Enumerated(EnumType.STRING)
     private NotificationType type;
     @CreationTimestamp
     private LocalDateTime created;

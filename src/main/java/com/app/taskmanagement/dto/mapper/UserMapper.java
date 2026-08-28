@@ -20,7 +20,7 @@ public class UserMapper {
         return UserResponse.builder()
                 .id(user.getId())
                 .fName(user.getFName())
-                .lName(user.getFName())
+                .lName(user.getLName())
                 .email(user.getEmail())
                 .role(user.getRole())
                 .created_at(user.getCreated_at())

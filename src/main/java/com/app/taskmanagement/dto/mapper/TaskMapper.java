@@ -3,6 +3,7 @@ package com.app.taskmanagement.dto.mapper;
 import com.app.taskmanagement.dto.TaskRequest;
 import com.app.taskmanagement.dto.TaskResponse;
 import com.app.taskmanagement.model.Task;
+import com.app.taskmanagement.model.User;
 import com.app.taskmanagement.service.UserService;
 import org.springframework.stereotype.Component;
 
@@ -15,13 +16,13 @@ public class TaskMapper {
         this.userService = userService;
     }
 
-    public Task toEntity(TaskRequest taskRequest, Principal principal) {
+    public Task toEntity(TaskRequest taskRequest, User user) {
         return new Task(
                 taskRequest.getTitle(),
                 taskRequest.getDescription(),
                 taskRequest.getStatus(),
                 taskRequest.getPriority(),
-                userService.getUserByEmailEntity(principal.getName()),
+                user,
                 userService.getUserByIdEntity(taskRequest.getAssignedToId()),
                 taskRequest.getDueDate()
         );

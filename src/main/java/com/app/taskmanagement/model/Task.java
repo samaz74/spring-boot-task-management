@@ -19,7 +19,9 @@ public class Task {
     private Long id;
     private String title;
     private String description;
+    @Enumerated(EnumType.STRING)
     private TaskStatus status;
+    @Enumerated(EnumType.STRING)
     private Priority priority;
     @ManyToOne
     @JoinColumn(name = "CREATED_BY")
