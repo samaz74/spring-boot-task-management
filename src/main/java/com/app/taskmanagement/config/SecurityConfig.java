@@ -46,10 +46,12 @@ public class SecurityConfig {
         http.authorizeHttpRequests(
                 auth -> auth.requestMatchers(
                         "/api/auth/login",
+                        "/ws/**",
                         "/swagger-ui/**",
                         "/swagger-ui.html",
                         "/v3/api-docs/**").permitAll().anyRequest().authenticated()
         );
+        http.cors(cors -> cors.disable());
         http.addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
         http.exceptionHandling(ex -> ex.authenticationEntryPoint(authenticationEntryPoint));
         return http.build();

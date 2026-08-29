@@ -24,7 +24,7 @@ public class NotificationController {
     }
     @PatchMapping("/{notificationId}")
     public void readNotifications(@PathVariable Long notificationId, Principal principal){
-        notificationService.UpdateTaskReadStatus(notificationId,principal);
+        notificationService.updateTaskReadStatus(notificationId,principal);
     }
     @DeleteMapping("/{notificationId}")
     public void deleteNotification(@PathVariable Long notificationId,Principal principal){
