@@ -1,12 +1,15 @@
-name: CI
-
-on:
-  push:
-    branches: [master]
-
 jobs:
   build:
     runs-on: ubuntu-latest
+
+    services:
+      mariadb:
+        image: mariadb:10.11
+        env:
+          MYSQL_ROOT_PASSWORD: 123
+          MYSQL_DATABASE: taskManagement
+        ports:
+          - 3306:3306
 
     steps:
       - name: Checkout code
@@ -20,3 +23,8 @@ jobs:
 
       - name: Build and Test
         run: mvn clean package
+        env:
+          SPRING_DATASOURCE_URL: jdbc:mariadb://localhost:3306/taskManagement
+          SPRING_DATASOURCE_USERNAME: root
+          SPRING_DATASOURCE_PASSWORD: 123
+          JWT_SECRET: thisIsAVerySecretKeyForJwtToken123456
