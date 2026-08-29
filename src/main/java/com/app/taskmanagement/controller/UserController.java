@@ -20,7 +20,7 @@ public class UserController {
     }
 
     @GetMapping("/userId/{userId}")
-    @PreAuthorize("hasRole('Admin')")
+    @PreAuthorize("hasRole('ADMIN')")
     public UserResponse getUserById(@PathVariable Long userId) {
         return userService.grtUserById(userId);
     }
@@ -29,7 +29,7 @@ public class UserController {
     public UserResponse getUserByEmail(@PathVariable String userEmail) {
         return userService.getUserByEmail(userEmail);
     }
-    @GetMapping("/}")
+    @GetMapping("/")
     @PreAuthorize("hasRole('ADMIN')")
     public List<UserResponse> getUsers() {
         return userService.getAllUsers();

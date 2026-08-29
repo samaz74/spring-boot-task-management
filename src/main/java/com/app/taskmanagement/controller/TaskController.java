@@ -44,7 +44,7 @@ public class TaskController {
     public List<TaskResponse> getAssignedToAndState(@PathVariable TaskStatus state, Principal principal){
         return taskService.getTaskByStatusForAssignedUser(state,principal);
     }
-    @GetMapping("/search/cratedByAndState/{state}")
+    @GetMapping("/search/createdByAndState/{state}")
     public List<TaskResponse> getCreatedByAndState(@PathVariable TaskStatus state, Principal principal){
         return taskService.getTaskByStatusAndCreatedUser (state,principal);
     }
