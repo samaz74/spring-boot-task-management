@@ -16,6 +16,7 @@ This project was built to practice and implement modern backend development conc
 - Clean layered architecture (Controller → Service → Repository)
 - Builder pattern in DTOs
 - Component-based Mapper layer
+- Containerization with Docker
 
 ---
 
@@ -31,6 +32,7 @@ This project was built to practice and implement modern backend development conc
 | Real-time | Spring WebSocket + STOMP |
 | Build Tool | Maven |
 | Utilities | Lombok |
+| Containerization | Docker + Docker Compose |
 
 ---
 
@@ -48,7 +50,7 @@ Database (MariaDB)
 
 ```
 com.app.taskmanagement
-├── config/          # SecurityConfig, WebSocketConfig
+├── config/          # SecurityConfig, WebSocketConfig, DataInitializer
 ├── controller/      # REST Controllers
 ├── dto/             # Request & Response DTOs
 │   └── mapper/      # Entity ↔ DTO Mappers
@@ -69,6 +71,7 @@ com.app.taskmanagement
 - JWT login with token generation
 - Logout with token blacklisting — invalidated tokens cannot be reused
 - Automatic cleanup of expired tokens via scheduled job
+- Default admin user created on startup via `DataInitializer`
 
 ### Task Management
 - Create, update, and retrieve tasks
@@ -81,7 +84,7 @@ com.app.taskmanagement
 - Notification on task status update
 - Notification on new comment
 - Mark as read / delete notifications
-- Real-time push via WebSocket (WIP)
+- Real-time push via WebSocket + STOMP
 
 ### Comments
 - Add comments to tasks
@@ -161,10 +164,10 @@ Authorization: Bearer <token>
 ### Prerequisites
 
 - Java 21
-- MariaDB
 - Maven 3.9+
+- Docker + Docker Compose
 
-### Setup
+### Run with Docker
 
 **1. Clone the repository**
 ```bash
@@ -172,24 +175,61 @@ git clone https://github.com/samaz74/spring-boot-task-management.git
 cd spring-boot-task-management
 ```
 
-**2. Create the database**
+**2. Configure environment variables**
+
+Update the following values in `docker-compose.yml`:
+```yaml
+SPRING_DATASOURCE_PASSWORD: your_password
+JWT_SECRET: yourSecretKeyHereMinimum32Characters
+```
+
+**3. Build and run**
+```bash
+docker-compose up --build
+```
+
+**4. Default admin credentials**
+```
+Email: admin@app.com
+Password: (as configured in DataInitializer)
+```
+
+### Run Locally (without Docker)
+
+**1. Create the database**
 ```sql
 CREATE DATABASE taskManagement;
 ```
 
-**3. Configure `application.properties`**
+**2. Configure `application.properties`**
 ```properties
 spring.datasource.url=jdbc:mariadb://localhost:3306/taskManagement
 spring.datasource.username=your_username
 spring.datasource.password=your_password
 
-jwt.secret=yourSecretKeyHere
+jwt.secret=yourSecretKeyHereMinimum32Characters
 jwt.expiration=1200000
 ```
 
-**4. Run the application**
+**3. Run**
 ```bash
 mvn spring-boot:run
+```
+
+---
+
+## WebSocket
+
+Real-time connection via STOMP over WebSocket:
+
+```
+ws://localhost:8080/ws/websocket
+```
+
+Subscribe to notifications:
+```
+SUBSCRIBE
+destination:/topic/notifications/{userId}
 ```
 
 ---
@@ -201,10 +241,10 @@ mvn spring-boot:run
 - [x] Task CRUD + Filtering
 - [x] Comment System
 - [x] Notification System
-- [ ] WebSocket Real-time Notifications
+- [x] WebSocket Real-time Notifications
+- [x] Docker + Docker Compose
 - [ ] Camunda BPMN Workflow
 - [ ] JasperReports PDF Export
-- [ ] Docker + Docker Compose
 - [ ] CI/CD with GitHub Actions
 - [ ] OAuth2 (Google Login)
 - [ ] Unit & Integration Tests
