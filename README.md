@@ -33,6 +33,7 @@ This project was built to practice and implement modern backend development conc
 | Build Tool | Maven |
 | Utilities | Lombok |
 | Containerization | Docker + Docker Compose |
+| CI/CD | GitHub Actions |
 
 ---
 
@@ -166,6 +167,7 @@ Authorization: Bearer <token>
 - Java 21
 - Maven 3.9+
 - Docker + Docker Compose
+- CI/CD pipeline with GitHub Actions (build + test on every push)
 
 ### Run with Docker
 
@@ -245,7 +247,7 @@ destination:/topic/notifications/{userId}
 - [x] Docker + Docker Compose
 - [ ] Camunda BPMN Workflow
 - [ ] JasperReports PDF Export
-- [ ] CI/CD with GitHub Actions
+- [x] CI/CD with GitHub Actions
 - [ ] OAuth2 (Google Login)
 - [ ] Unit & Integration Tests
 
