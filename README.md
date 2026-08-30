@@ -1,22 +1,39 @@
 # Spring Boot Task Management System
 
-A production-oriented task management REST API built with **Java 21** and **Spring Boot 4.1.1**, featuring JWT authentication, role-based access control, real-time notifications via WebSocket, and a complete task workflow.
+A task management REST API built with Java 21 and Spring Boot. The project is being developed as a practical learning project for Java/Spring backend development, code review, testing, security, database design, and performance optimization.
 
-> **Status:** Work in Progress (WIP) — actively being developed as part of a learning roadmap toward enterprise-level Java backend development.
+> **Status:** Work in Progress — features and architecture are being improved incrementally as part of a backend learning roadmap.
 
 ---
 
 ## Overview
 
-This project was built to practice and implement modern backend development concepts including:
+This project implements a task management backend with:
 
-- Secure JWT authentication with token blacklisting
-- Role-based access control (ADMIN / MANAGER / USER)
-- Real-time notifications using WebSocket + STOMP
-- Clean layered architecture (Controller → Service → Repository)
-- Builder pattern in DTOs
-- Component-based Mapper layer
-- Containerization with Docker
+- JWT authentication
+- Role-based access control
+- User management
+- Task creation and assignment
+- Controlled task-status transitions
+- Comments
+- Notifications
+- Real-time notifications using WebSocket and STOMP
+- Docker support
+- Continuous integration with GitHub Actions
+
+The project follows a layered architecture:
+
+```text
+Controller
+    ↓
+Service
+    ↓
+Repository
+    ↓
+Database
+```
+
+DTOs are used as API contracts, and mapper components convert between DTOs and entities.
 
 ---
 
@@ -25,42 +42,43 @@ This project was built to practice and implement modern backend development conc
 | Category | Technology |
 |---|---|
 | Language | Java 21 |
-| Framework | Spring Boot 4.1.1 |
-| Security | Spring Security + JWT (jjwt 0.13.0) |
+| Framework | Spring Boot |
+| Web | Spring MVC |
+| Security | Spring Security + JWT |
 | Database | MariaDB |
-| ORM | Spring Data JPA / Hibernate |
-| Real-time | Spring WebSocket + STOMP |
-| Build Tool | Maven |
+| Persistence | Spring Data JPA / Hibernate |
+| Validation | Jakarta Bean Validation |
+| Real-time messaging | WebSocket + STOMP |
+| Build tool | Maven |
 | Utilities | Lombok |
 | Containerization | Docker + Docker Compose |
-| CI/CD | GitHub Actions |
+| CI | GitHub Actions |
+| Testing | JUnit 5 + Mockito |
 
 ---
 
-## Architecture
+## Project Structure
 
-```
-Controller Layer
-      ↓
-Service Layer
-      ↓
-Repository Layer
-      ↓
-Database (MariaDB)
-```
-
-```
+```text
 com.app.taskmanagement
-├── config/          # SecurityConfig, WebSocketConfig, DataInitializer
-├── controller/      # REST Controllers
-├── dto/             # Request & Response DTOs
-│   └── mapper/      # Entity ↔ DTO Mappers
-├── exception/       # Custom Exceptions & GlobalExceptionHandler
-├── model/           # JPA Entities
-│   └── enums/       # Roles, TaskStatus, Priority, NotificationType
-├── repository/      # Spring Data JPA Repositories
-├── security/        # JWT Filter, UserPrincipal, UserDetailsService
-└── service/         # Business Logic
+├── config
+│   ├── DataInitializer
+│   ├── SecurityConfig
+│   └── WebSocketConfig
+├── controller
+│   ├── AuthController
+│   ├── CommentController
+│   ├── NotificationController
+│   ├── TaskController
+│   └── UserController
+├── dto
+│   └── mapper
+├── exception
+├── model
+│   └── enums
+├── repository
+├── security
+└── service
 ```
 
 ---
@@ -68,196 +86,437 @@ com.app.taskmanagement
 ## Features
 
 ### Authentication
-- User registration (ADMIN only)
-- JWT login with token generation
-- Logout with token blacklisting — invalidated tokens cannot be reused
-- Automatic cleanup of expired tokens via scheduled job
-- Default admin user created on startup via `DataInitializer`
+
+- Login using email and password
+- JWT generation after successful authentication
+- Stateless request authentication
+- Logout using token invalidation
+- Rejection of invalidated tokens
+- Password hashing using BCrypt
+- Default administrator initialization for local development
+
+### User Management
+
+- Create users
+- Retrieve users
+- Search users by email, name, or role
+- Update users
+- Delete users
+- Global roles:
+    - `ADMIN`
+    - `MANAGER`
+    - `USER`
 
 ### Task Management
-- Create, update, and retrieve tasks
-- Assign tasks to users
-- Filter tasks by status, priority, assigned user, or creator
-- Task status workflow: `CREATED → IN_PROGRESS → DONE → CLOSED`
 
-### Notifications
-- Automatic notification on task assignment
-- Notification on task status update
-- Notification on new comment
-- Mark as read / delete notifications
-- Real-time push via WebSocket + STOMP
+- Create tasks
+- Retrieve tasks by ID
+- Update editable task information
+- Assign tasks to users
+- Search tasks by creator
+- Search tasks by assigned user
+- Filter tasks by status or priority
+- Preserve server-owned fields during updates
+- Update managed JPA entities using transaction-based dirty checking
+
+A new task always starts with the `CREATED` status. The client cannot choose an arbitrary initial status.
+
+### Task Workflow
+
+Task status changes are action-based. The client sends an action, and the backend determines whether the transition is valid.
+
+```text
+CREATED --START--> IN_PROGRESS
+IN_PROGRESS --COMPLETE--> DONE
+CREATED / IN_PROGRESS --CANCEL--> CANCELED
+CANCELED --REOPEN--> IN_PROGRESS
+```
+
+Supported actions:
+
+- `START`
+- `COMPLETE`
+- `REOPEN`
+- `CANCEL`
+
+Invalid transitions are rejected. For example, `COMPLETE` can only be executed when a task is currently `IN_PROGRESS`.
 
 ### Comments
-- Add comments to tasks
-- View all comments on a task
-- Automatic notification to the other party on new comment
+
+- Add a comment to a task
+- Retrieve comments for a task
+- Store the comment author and creation time
+- Notify the other participant after a comment is added
+
+### Notifications
+
+- Notify a user when a task is assigned
+- Notify participants when a task status changes
+- Notify participants when a comment is added
+- Retrieve user notifications
+- Mark notifications as read
+- Delete notifications
+- Push notifications through WebSocket/STOMP
+
+---
+
+## Task Update Design
+
+Task creation and general task updates use a request DTO containing only client-editable fields:
+
+```text
+title
+description
+priority
+assignedToId
+dueDate
+```
+
+Server-owned fields are not controlled by the client:
+
+```text
+id
+status
+createdBy
+createdAt
+updatedAt
+```
+
+During an update, the existing task is loaded from the database and modified inside a transaction. Hibernate dirty checking persists the changes when the transaction completes.
+
+This prevents server-owned information such as the original creator and creation date from being overwritten.
 
 ---
 
 ## Security
 
-JWT-based stateless authentication.
+The API uses stateless JWT authentication.
 
-```
+Authenticated requests must include:
+
+```http
 Authorization: Bearer <token>
 ```
 
-| Role | Access |
-|---|---|
-| ADMIN | Full access — user management, all tasks |
-| MANAGER | Create and manage tasks, assign to users |
-| USER | View and update assigned tasks, add comments |
+The JWT filter:
 
-**Token blacklisting:** Logged-out tokens are stored in `InvalidatedToken` table and rejected on every request.
+1. Reads the bearer token.
+2. Checks whether it has been invalidated.
+3. Validates the token signature and expiration.
+4. Loads the authenticated user.
+5. places the authentication in the Spring Security context.
+
+Method-level authorization is used for administrative operations.
+
+> Security and authorization rules are still being reviewed and improved as part of the project roadmap.
 
 ---
 
 ## API Endpoints
 
-### Auth — `/api/auth`
-| Method | Path | Auth | Description |
+### Authentication — `/api/auth`
+
+| Method | Endpoint | Access | Description |
 |---|---|---|---|
-| POST | `/api/auth/createUser` | ADMIN | Create new user |
-| POST | `/api/auth/login` | Public | Login and get JWT |
-| POST | `/api/auth/logout` | Authenticated | Logout and invalidate token |
+| POST | `/api/auth/login` | Public | Authenticate and receive a JWT |
+| POST | `/api/auth/createUser` | ADMIN | Create a user |
+| POST | `/api/auth/logout` | Authenticated | Invalidate the current token |
 
 ### Users — `/api/user`
-| Method | Path | Auth | Description |
+
+| Method | Endpoint | Access | Description |
 |---|---|---|---|
-| GET | `/api/user/userId/{userId}` | ADMIN | Get user by ID |
-| GET | `/api/user/email/{email}` | ADMIN | Get user by email |
+| GET | `/api/user/userId/{userId}` | ADMIN | Get a user by ID |
+| GET | `/api/user/email/{email}` | ADMIN | Get a user by email |
 | GET | `/api/user/` | ADMIN | Get all users |
 | GET | `/api/user/search/email/{email}` | ADMIN | Search users by email |
-| GET | `/api/user/search/firstName/{name}` | ADMIN | Search by first name |
-| GET | `/api/user/search/lastName/{name}` | ADMIN | Search by last name |
-| GET | `/api/user/search/role/{role}` | ADMIN | Filter by role |
-| PUT | `/api/user/{userId}` | ADMIN | Update user |
-| DELETE | `/api/user/{userId}` | ADMIN | Delete user |
+| GET | `/api/user/search/firstName/{name}` | ADMIN | Search users by first name |
+| GET | `/api/user/search/lastName/{name}` | ADMIN | Search users by last name |
+| GET | `/api/user/search/role/{role}` | ADMIN | Filter users by role |
+| PUT | `/api/user/{userId}` | ADMIN | Update a user |
+| DELETE | `/api/user/{userId}` | ADMIN | Delete a user |
 
 ### Tasks — `/api/task`
-| Method | Path | Auth | Description |
+
+| Method | Endpoint | Access | Description |
 |---|---|---|---|
-| GET | `/api/task/{taskId}` | Authenticated | Get task by ID |
-| POST | `/api/task` | MANAGER | Create task |
-| PUT | `/api/task/{taskId}` | MANAGER | Update task |
-| GET | `/api/task/search/assignedTo/{userId}` | Authenticated | Tasks assigned to user |
-| GET | `/api/task/search/createdBy/{userId}` | Authenticated | Tasks created by user |
-| GET | `/api/task/search/assignedToAndState/{state}` | Authenticated | My assigned tasks by status |
-| GET | `/api/task/search/createdByAndState/{state}` | Authenticated | My created tasks by status |
+| GET | `/api/task/{taskId}` | Authenticated | Get a task by ID |
+| POST | `/api/task` | Authenticated | Create a task |
+| PUT | `/api/task/{taskId}` | Authenticated | Update editable task information |
+| PATCH | `/api/task/update/status` | Authenticated | Execute a task-status transition |
+| GET | `/api/task/search/assignedTo/{userId}` | Authenticated | Get tasks assigned to a user |
+| GET | `/api/task/search/createdBy/{userId}` | Authenticated | Get tasks created by a user |
+| GET | `/api/task/search/assignedToAndState/{state}` | Authenticated | Get the current user's assigned tasks by status |
+| GET | `/api/task/search/createdByAndState/{state}` | Authenticated | Get the current user's created tasks by status |
 
 ### Comments — `/api/comment`
-| Method | Path | Auth | Description |
+
+| Method | Endpoint | Access | Description |
 |---|---|---|---|
-| GET | `/api/comment/{taskId}` | Authenticated | Get comments for task |
-| POST | `/api/comment` | Authenticated | Add comment to task |
+| GET | `/api/comment/{taskId}` | Authenticated | Get comments for a task |
+| POST | `/api/comment` | Authenticated | Add a comment to a task |
 
 ### Notifications — `/api/notification`
-| Method | Path | Auth | Description |
+
+| Method | Endpoint | Access | Description |
 |---|---|---|---|
-| GET | `/api/notification/` | Authenticated | Get user notifications |
-| PATCH | `/api/notification/{id}` | Authenticated | Mark notification as read |
-| DELETE | `/api/notification/{id}` | Authenticated | Delete notification |
+| GET | `/api/notification/` | Authenticated | Get the authenticated user's notifications |
+| PATCH | `/api/notification/{notificationId}` | Authenticated | Mark a notification as read |
+| DELETE | `/api/notification/{notificationId}` | Authenticated | Delete a notification |
 
 ---
 
-## Getting Started
+## Task API Examples
 
-### Prerequisites
+### Create a Task
 
-- Java 21
-- Maven 3.9+
-- Docker + Docker Compose
-- CI/CD pipeline with GitHub Actions (build + test on every push)
-
-### Run with Docker
-
-**1. Clone the repository**
-```bash
-git clone https://github.com/samaz74/spring-boot-task-management.git
-cd spring-boot-task-management
+```http
+POST /api/task
+Authorization: Bearer <token>
+Content-Type: application/json
 ```
 
-**2. Configure environment variables**
-
-Update the following values in `docker-compose.yml`:
-```yaml
-SPRING_DATASOURCE_PASSWORD: your_password
-JWT_SECRET: yourSecretKeyHereMinimum32Characters
+```json
+{
+  "title": "Implement task workflow",
+  "description": "Add controlled status transitions",
+  "priority": "HIGH",
+  "assignedToId": 2,
+  "dueDate": "2026-09-10T18:00:00"
+}
 ```
 
-**3. Build and run**
-```bash
-docker-compose up --build
+The backend creates the task with:
+
+```text
+status = CREATED
 ```
 
-**4. Default admin credentials**
-```
-Email: admin@app.com
-Password: (as configured in DataInitializer)
-```
+### Update a Task
 
-### Run Locally (without Docker)
-
-**1. Create the database**
-```sql
-CREATE DATABASE taskManagement;
+```http
+PUT /api/task/10
+Authorization: Bearer <token>
+Content-Type: application/json
 ```
 
-**2. Configure `application.properties`**
-```properties
-spring.datasource.url=jdbc:mariadb://localhost:3306/taskManagement
-spring.datasource.username=your_username
-spring.datasource.password=your_password
-
-jwt.secret=yourSecretKeyHereMinimum32Characters
-jwt.expiration=1200000
+```json
+{
+  "title": "Implement and test task workflow",
+  "description": "Add controlled status transitions and tests",
+  "priority": "CRITICAL",
+  "assignedToId": 2,
+  "dueDate": "2026-09-12T18:00:00"
+}
 ```
 
-**3. Run**
-```bash
-mvn spring-boot:run
+The general update endpoint does not change the task status.
+
+### Execute a Status Transition
+
+```http
+PATCH /api/task/update/status
+Authorization: Bearer <token>
+Content-Type: application/json
+```
+
+```json
+{
+  "taskId": 10,
+  "taskActions": "START"
+}
+```
+
+A successful `START` action changes the task from:
+
+```text
+CREATED → IN_PROGRESS
+```
+
+An action that is not valid for the current status is rejected.
+
+---
+
+## Error Handling
+
+The project uses a global exception handler and custom exceptions.
+
+| Condition | HTTP status |
+|---|---:|
+| Invalid request or workflow transition | 400 Bad Request |
+| Invalid credentials | 401 Unauthorized |
+| Authenticated user without permission | 403 Forbidden |
+| Resource not found | 404 Not Found |
+
+Error responses contain:
+
+```json
+{
+  "timestamp": "2026-08-30T10:00:00",
+  "status": 400,
+  "message": "Invalid operation",
+  "path": "uri=/api/task/update/status"
+}
 ```
 
 ---
 
 ## WebSocket
 
-Real-time connection via STOMP over WebSocket:
+The WebSocket/STOMP endpoint is:
 
-```
+```text
 ws://localhost:8080/ws/websocket
 ```
 
-Subscribe to notifications:
+Clients can subscribe to:
+
+```text
+/topic/notifications/{userId}
 ```
-SUBSCRIBE
-destination:/topic/notifications/{userId}
+
+The application currently uses Spring's simple in-memory message broker.
+
+---
+
+## Running the Project
+
+### Prerequisites
+
+- Java 21
+- Maven 3.9+
+- MariaDB
+- Docker and Docker Compose, if using containers
+
+### Run Locally
+
+Create the database:
+
+```sql
+CREATE DATABASE taskManagement;
+```
+
+Configure the required environment or application properties:
+
+```properties
+spring.datasource.url=jdbc:mariadb://localhost:3306/taskManagement
+spring.datasource.username=your_username
+spring.datasource.password=your_password
+
+jwt.secret=your_secret_key_with_sufficient_length
+jwt.expiration=1200000
+```
+
+Run the application:
+
+```bash
+mvn spring-boot:run
+```
+
+### Run with Docker
+
+Build and start the services:
+
+```bash
+docker compose up --build
+```
+
+The API will be available at:
+
+```text
+http://localhost:8080
 ```
 
 ---
 
-## Roadmap
+## Testing
 
-- [x] JWT Authentication + Token Blacklisting
-- [x] Role-Based Access Control
-- [x] Task CRUD + Filtering
-- [x] Comment System
-- [x] Notification System
-- [x] WebSocket Real-time Notifications
-- [x] Docker + Docker Compose
-- [ ] Camunda BPMN Workflow
-- [ ] JasperReports PDF Export
-- [x] CI/CD with GitHub Actions
-- [ ] OAuth2 (Google Login)
-- [ ] Unit & Integration Tests
+Run the tests with:
+
+```bash
+mvn test
+```
+
+The current test suite is being expanded. Planned test coverage includes:
+
+- Authentication
+- Task creation
+- Dirty-checking-based task updates
+- Valid status transitions
+- Invalid status transitions
+- Authorization
+- Repository queries
+- Controller and integration tests
+
+---
+
+## Current Learning Roadmap
+
+The project is being improved incrementally in the following order:
+
+1. JPA entity lifecycle and dirty checking
+2. Transactions
+3. SQL, indexes, and query optimization
+4. N+1 query detection and resolution
+5. Spring AOP
+6. Unit and integration testing
+7. API design
+8. Security and authorization
+9. Redis
+10. Asynchronous processing and RabbitMQ
+11. Java concurrency
+12. Basic system design
+13. Logging and monitoring
+
+Technologies are added only when the project has a real use case for them.
+
+The following topics are intentionally postponed:
+
+- Kubernetes
+- Kafka
+- CQRS
+- Deep DDD
+- Spring Batch
+- Complex microservice architecture
+- Workflow engines
+
+---
+
+## Planned Improvements
+
+- Add unit tests for task transitions
+- Add integration tests for secured endpoints
+- Improve project-level authorization
+- Add project and project-membership concepts
+- Add pagination and sorting
+- Review database indexes
+- Detect and fix N+1 queries
+- Improve secret management
+- Add database migrations
+- Improve logging and monitoring
+- Standardize API responses and validation errors
+
+---
+
+## Development Principles
+
+This project follows several learning and design principles:
+
+- Understand a concept before introducing a new technology.
+- Prefer simple solutions until complexity is justified.
+- Keep business rules in the backend.
+- Do not trust client-controlled ownership or status fields.
+- Use tests to protect important behavior.
+- Refactor only after understanding the current design.
+- Every technology used in the project should be explainable in a technical interview.
 
 ---
 
 ## Author
 
-**Peyman Azish**  
+**Peyman Azish**
+
 Java Backend Developer
 
 - GitHub: [github.com/samaz74](https://github.com/samaz74)
 - LinkedIn: [linkedin.com/in/peyman-azish](https://www.linkedin.com/in/peyman-azish)
-- Email: azish.pey@gmail.com
