@@ -17,14 +17,14 @@ public class CommentService {
     private final CommentMapper commentMapper;
     private final UserService userService;
     private final NotificationService notificationService;
-    private final TaskService taskService;
+    private final TasksService tasksService;
 
-    public CommentService(CommentRepository commentRepository, CommentMapper commentMapper, UserService userService, NotificationService notificationService, TaskService taskService) {
+    public CommentService(CommentRepository commentRepository, CommentMapper commentMapper, UserService userService, NotificationService notificationService, TasksService tasksService) {
         this.commentRepository = commentRepository;
         this.commentMapper = commentMapper;
         this.userService = userService;
         this.notificationService = notificationService;
-        this.taskService = taskService;
+        this.tasksService = tasksService;
     }
     public CommentResponse createComment(CommentRequest commentRequest, Principal principal){
         Comment comment = commentRepository.save(commentMapper.toEntity(commentRequest, userService.getUserByEmailEntity(principal.getName())));
@@ -33,6 +33,6 @@ public class CommentService {
     }
 
     public List<CommentResponse> getCommentByTaskId(Long taskId){
-        return commentRepository.findCommentByTask(taskService.getTaskByIdEntity(taskId)).stream().map(commentMapper::toResponse).collect(Collectors.toList());
+        return commentRepository.findCommentByTask(tasksService.getTaskByIdEntity(taskId)).stream().map(commentMapper::toResponse).collect(Collectors.toList());
     }
 }

@@ -24,10 +24,10 @@ public class Task {
     private TaskStatus status;
     @Enumerated(EnumType.STRING)
     private Priority priority;
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "CREATED_BY")
     private User createdBy;
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "ASSIGNED_BY")
     private User assignedTo;
     private LocalDateTime dueDate;
@@ -35,10 +35,9 @@ public class Task {
     private LocalDateTime createdAt;
     @UpdateTimestamp
     private LocalDateTime updatedAt;
-    public Task(String title, String description, TaskStatus status, Priority priority, User createdBy, User assignedTo, LocalDateTime dueDate) {
+    public Task(String title, String description, Priority priority, User createdBy, User assignedTo, LocalDateTime dueDate) {
         this.title = title;
         this.description = description;
-        this.status = status;
         this.priority = priority;
         this.createdBy = createdBy;
         this.assignedTo = assignedTo;

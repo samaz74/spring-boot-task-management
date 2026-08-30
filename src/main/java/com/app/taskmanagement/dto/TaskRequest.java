@@ -1,7 +1,6 @@
 package com.app.taskmanagement.dto;
 
 import com.app.taskmanagement.model.enums.Priority;
-import com.app.taskmanagement.model.enums.TaskStatus;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
@@ -18,8 +17,6 @@ public class TaskRequest {
     private String title;
     @NotBlank
     private String description;
-    @NotNull
-    private TaskStatus status;
     @NotNull
     private Priority priority;
     @NotNull

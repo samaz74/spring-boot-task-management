@@ -20,7 +20,6 @@ public class TaskMapper {
         return new Task(
                 taskRequest.getTitle(),
                 taskRequest.getDescription(),
-                taskRequest.getStatus(),
                 taskRequest.getPriority(),
                 user,
                 userService.getUserByIdEntity(taskRequest.getAssignedToId()),
