@@ -1,5 +1,6 @@
 package com.app.taskmanagement.controller;
 
+import com.app.taskmanagement.annotation.TrackExecutionTime;
 import com.app.taskmanagement.dto.AuthResponse;
 import com.app.taskmanagement.dto.LoginRequest;
 import com.app.taskmanagement.dto.UserRequest;
@@ -25,6 +26,7 @@ public class AuthController {
     }
 
     @PostMapping("/login")
+    @TrackExecutionTime(threshold = 500)
     public AuthResponse login(@Valid @RequestBody LoginRequest loginRequest) {
         return authService.loginUser(loginRequest.getEmail(), loginRequest.getPassword());
     }
