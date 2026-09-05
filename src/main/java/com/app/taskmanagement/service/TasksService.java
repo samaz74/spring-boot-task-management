@@ -14,6 +14,7 @@ import com.app.taskmanagement.model.enums.TaskStatus;
 import com.app.taskmanagement.repository.TaskRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.stereotype.Service;
 
@@ -36,6 +37,7 @@ public class TasksService {
     public Task getTaskByIdEntity(Long id){
         return taskRepository.findById(id).orElseThrow(()->new ResourceNotFoundException("Task not found"));
     }
+    @Cacheable(value = "tasks" , key = "#id")
     public TaskResponse getTaskById(Long id){
         return taskRepository.findById(id).map(taskMapper::toResponse).orElseThrow(()->new ResourceNotFoundException("Task not found"));
     }

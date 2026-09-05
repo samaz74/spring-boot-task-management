@@ -46,7 +46,7 @@ public class AuthService {
         }
     }
 
-    public AuthResponse loginUser(String email, String password) {
+    public AuthResponse loginUser(String email, String password){
         authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(email, password));
         User user = userRepository.findUserByEmail(email).orElseThrow(()-> new ResourceNotFoundException("User not found"));
         String token = jwtUtil.generateToken(user);
