@@ -12,6 +12,8 @@ import com.app.taskmanagement.model.enums.Priority;
 import com.app.taskmanagement.model.enums.Roles;
 import com.app.taskmanagement.model.enums.TaskStatus;
 import com.app.taskmanagement.repository.TaskRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.stereotype.Service;
 
@@ -92,6 +94,13 @@ public class TasksService {
 
     public List<TaskResponse> getTaskByStatusAndCreatedUser(TaskStatus status, Principal principal){
         return taskRepository.findTaskByStatusAndCreatedBy(status, userService.getUserByEmailEntity(principal.getName())).stream().map(taskMapper::toResponse).collect(Collectors.toList());
+    }
+
+    public List<TaskResponse> getTaskByAssignedToOrderByCreateUser(Long userId){
+        return taskRepository.findTaskByAssignedToOrderByCreatedByDesc(userService.getUserByIdEntity(userId)).stream().map(taskMapper::toResponse).collect(Collectors.toList());
+    }
+    public Page<TaskResponse> getTasks(Pageable pageable){
+        return taskRepository.findAll(pageable).map(taskMapper::toResponse);
     }
 
 }

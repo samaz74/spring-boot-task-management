@@ -6,6 +6,10 @@ import com.app.taskmanagement.dto.TaskStatusUpdateRequest;
 import com.app.taskmanagement.model.enums.TaskStatus;
 import com.app.taskmanagement.service.TasksService;
 import jakarta.validation.Valid;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;
@@ -52,6 +56,14 @@ public class TaskController {
     @PatchMapping("/update/status")
     public TaskResponse updateTaskStatus(@Valid @RequestBody TaskStatusUpdateRequest taskStatusUpdateRequest, Principal principal){
         return tasksService.updateTaskStatus(taskStatusUpdateRequest,principal);
+    }
+    @GetMapping("/search/assignedToOrderedWithCratedBy/{userId}")
+    public List<TaskResponse> getAssignedToOrderedWithCratedBy(@PathVariable Long userId){
+        return tasksService.getTaskByAssignedToOrderByCreateUser(userId);
+    }
+    @GetMapping()
+    public Page<TaskResponse> getAll(@PageableDefault(size = 10, sort = "id" , direction = Sort.Direction.DESC)Pageable pageable){
+        return tasksService.getTasks(pageable);
     }
 
 
