@@ -3,6 +3,7 @@ package com.app.taskmanagement.service;
 import com.app.taskmanagement.dto.NotificationResponse;
 import com.app.taskmanagement.dto.TaskResponse;
 import com.app.taskmanagement.dto.mapper.NotificationMapper;
+import com.app.taskmanagement.event.TaskCreatedEvent;
 import com.app.taskmanagement.exception.AccessDeniedException;
 import com.app.taskmanagement.exception.ResourceNotFoundException;
 import com.app.taskmanagement.model.Comment;
@@ -10,7 +11,12 @@ import com.app.taskmanagement.model.Notification;
 import com.app.taskmanagement.model.Task;
 import com.app.taskmanagement.model.enums.NotificationType;
 import com.app.taskmanagement.repository.NotificationRepository;
+import org.springframework.context.event.EventListener;
+import org.springframework.kafka.annotation.BackOff;
+import org.springframework.kafka.annotation.KafkaListener;
+import org.springframework.kafka.annotation.RetryableTopic;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import java.security.Principal;
@@ -31,10 +37,11 @@ public class NotificationService {
         this.notificationMapper = notificationMapper;
         this.simpMessagingTemplate=simpMessagingTemplate;
     }
-
-    public void createTask(Task task){
-        Notification notification = notificationRepository.save(new Notification(task.getTitle(),false,task,userService.getUserByIdEntity(task.getAssignedTo().getId()), NotificationType.TASK_ASSIGNED));
-        simpMessagingTemplate.convertAndSend("/topic/notifications/" + task.getAssignedTo().getId(), notificationMapper.toNotificationResponse(notification));
+    @RetryableTopic(attempts = "3",backOff = @BackOff(delay = 2000))
+    @KafkaListener(topics = "created_task", groupId = "notification-group")
+    public void createTask(TaskCreatedEvent task){
+        Notification notification = notificationRepository.save(new Notification(task.task().getTitle(),false,task.task(),userService.getUserByIdEntity(task.task().getAssignedTo().getId()), NotificationType.TASK_ASSIGNED));
+        simpMessagingTemplate.convertAndSend("/topic/notifications/" + task.task().getAssignedTo().getId(), notificationMapper.toNotificationResponse(notification));
     }
     public void updateTaskStatus(Task task, Principal principal){
         if (task.getCreatedBy().equals(userService.getUserByEmailEntity(principal.getName()))) {

@@ -4,9 +4,11 @@ import com.app.taskmanagement.dto.TaskRequest;
 import com.app.taskmanagement.dto.TaskResponse;
 import com.app.taskmanagement.dto.TaskStatusUpdateRequest;
 import com.app.taskmanagement.dto.mapper.TaskMapper;
+import com.app.taskmanagement.event.TaskCreatedEvent;
 import com.app.taskmanagement.exception.AccessDeniedException;
 import com.app.taskmanagement.exception.InvalidOperationException;
 import com.app.taskmanagement.exception.ResourceNotFoundException;
+import com.app.taskmanagement.kafka.TaskEventProducer;
 import com.app.taskmanagement.model.Task;
 import com.app.taskmanagement.model.enums.Priority;
 import com.app.taskmanagement.model.enums.Roles;
@@ -15,8 +17,10 @@ import com.app.taskmanagement.repository.TaskRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.kafka.event.KafkaEvent;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.stereotype.Service;
+import org.springframework.context.ApplicationEventPublisher;
 
 import java.security.Principal;
 import java.util.List;
@@ -28,11 +32,16 @@ public class TasksService {
     private final UserService userService;
     private final NotificationService notificationService;
     private final TaskRepository taskRepository;
-    public TasksService(TaskRepository taskRepository, TaskMapper taskMapper, UserService userService, NotificationService notificationService) {
+    private final ApplicationEventPublisher publisher;
+    private final TaskEventProducer taskEventProducer;
+    public TasksService(TaskRepository taskRepository, TaskMapper taskMapper, UserService userService, NotificationService notificationService,ApplicationEventPublisher publisher, TaskEventProducer taskEventProducer) {
         this.taskRepository = taskRepository;
         this.taskMapper = taskMapper;
         this.userService = userService;
         this.notificationService = notificationService;
+        this.publisher = publisher;
+        this.taskEventProducer = taskEventProducer;
+
     }
     public Task getTaskByIdEntity(Long id){
         return taskRepository.findById(id).orElseThrow(()->new ResourceNotFoundException("Task not found"));
@@ -46,7 +55,11 @@ public class TasksService {
         Task task = taskMapper.toEntity(taskRequest, userService.getUserByEmailEntity(principal.getName()));
         task.setStatus(TaskStatus.CREATED);
         taskRepository.save(task);
-        notificationService.createTask(task);
+    /*    notificationService.createTask(task);*/
+/*        publisher.publishEvent(
+                new TaskCreatedEvent(task)
+        );*/
+        taskEventProducer.send("created_task", task.getId(),new TaskCreatedEvent(task));
         return taskMapper.toResponse(task);
     }
     @Transactional
